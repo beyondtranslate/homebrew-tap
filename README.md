@@ -9,10 +9,13 @@ translation and dictionary app for macOS.
 brew install --cask beyondtranslate/tap/beyondtranslate-ce
 ```
 
-Or tap first, then install by name:
+Installing by the full name also marks the cask as trusted, which Homebrew
+requires for casks from third-party taps. To tap first and install by the
+short name, trust the cask yourself:
 
 ```bash
 brew tap beyondtranslate/tap
+brew trust --cask beyondtranslate/tap/beyondtranslate-ce
 brew install --cask beyondtranslate-ce
 ```
 
