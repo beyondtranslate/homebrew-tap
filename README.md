@@ -6,26 +6,26 @@ translation and dictionary app for macOS.
 ## Install
 
 ```bash
-brew install --cask beyondtranslate/tap/beyondtranslate
+brew install --cask beyondtranslate/tap/beyondtranslate-ce
 ```
 
 Or tap first, then install by name:
 
 ```bash
 brew tap beyondtranslate/tap
-brew install --cask beyondtranslate
+brew install --cask beyondtranslate-ce
 ```
 
 ## Update
 
 ```bash
-brew upgrade --cask beyondtranslate
+brew upgrade --cask beyondtranslate-ce
 ```
 
 ## Uninstall
 
 ```bash
-brew uninstall --cask beyondtranslate
+brew uninstall --cask beyondtranslate-ce
 ```
 
 Add `--zap` to also remove settings and caches.

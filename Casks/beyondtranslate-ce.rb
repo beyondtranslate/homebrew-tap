@@ -1,4 +1,4 @@
-cask "beyondtranslate" do
+cask "beyondtranslate-ce" do
   # Release assets are named after the full Flutter version, so the cask
   # version carries the build number too: `0.6.0,19` downloads
   # `beyondtranslate-0.6.0+19-macos.dmg`.
