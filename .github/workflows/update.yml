@@ -1,0 +1,92 @@
+name: Update
+
+# Points the cask at the latest BeyondTranslate release.
+#
+# Runs on a schedule, by hand, or when the app's release workflow dispatches
+# it. It reads the latest published release of beyondtranslate-ce, and when
+# that release is newer than the cask, rewrites `version` and `sha256` and
+# pushes the change to main.
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+env:
+  SOURCE_REPO: beyondtranslate/beyondtranslate-ce
+  CASK: Casks/beyondtranslate.rb
+
+jobs:
+  update:
+    name: Update the cask
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find the latest release
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          asset="$(gh release view --repo "$SOURCE_REPO" --json assets \
+            --jq '.assets[].name | select(test("^beyondtranslate-[0-9.]+\\+[0-9]+-macos\\.dmg$"))')"
+          if [ -z "$asset" ]; then
+            echo "::error::The latest release of $SOURCE_REPO has no macOS DMG."
+            exit 1
+          fi
+
+          # beyondtranslate-0.6.0+19-macos.dmg -> 0.6.0,19
+          full="${asset#beyondtranslate-}"
+          full="${full%-macos.dmg}"
+          version="${full%%+*},${full#*+}"
+          current="$(sed -n 's/^  version "\(.*\)"$/\1/p' "$CASK")"
+
+          echo "Latest release: $version, cask: $current"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v${full%%+*}" >> "$GITHUB_OUTPUT"
+          if [ "$version" = "$current" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Rewrite the cask
+        if: steps.release.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASSET: ${{ steps.release.outputs.asset }}
+          VERSION: ${{ steps.release.outputs.version }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          gh release download "$TAG" --repo "$SOURCE_REPO" --pattern "$ASSET" --dir "$RUNNER_TEMP"
+          sha256="$(sha256sum "$RUNNER_TEMP/$ASSET" | cut -d' ' -f1)"
+
+          sed -i \
+            -e "s/^  version \".*\"$/  version \"$VERSION\"/" \
+            -e "s/^  sha256 \".*\"$/  sha256 \"$sha256\"/" \
+            "$CASK"
+          git diff
+
+      - name: Push
+        if: steps.release.outputs.changed == 'true'
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "beyondtranslate ${VERSION%%,*}"
+          git push
