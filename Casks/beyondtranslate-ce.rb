@@ -6,7 +6,7 @@ cask "beyondtranslate-ce" do
   sha256 "8aed189cfc03496f5eaaea7435570858623a100a8250351a378b90e70058e395"
 
   url "https://github.com/beyondtranslate/beyondtranslate-ce/releases/download/v#{version.csv.first}/beyondtranslate-#{version.csv.first}%2B#{version.csv.second}-macos.dmg"
-  name "BeyondTranslate"
+  name "BeyondTranslate CE"
   desc "Translation and dictionary app"
   homepage "https://beyondtranslate.com/"
 
@@ -25,17 +25,26 @@ cask "beyondtranslate-ce" do
 
   depends_on macos: :ventura
 
-  app "beyondtranslate.app"
+  # The bundle is named after `APP_PRODUCT_NAME` in the app's
+  # `macos/Runner/Configs/Edition.xcconfig`; keep the two in step.
+  app "BeyondTranslate-CE.app"
 
   # The app is ad-hoc signed and not notarized, so Gatekeeper would refuse to
   # open the quarantined copy that Homebrew downloads.
   postflight_steps do
-    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/beyondtranslate.app"]
+    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{appdir}}/BeyondTranslate-CE.app"]
   end
 
-  uninstall quit: "com.beyondtranslate.app"
+  uninstall quit: "com.beyondtranslate.appce"
 
+  # 0.6.0 shipped as `beyondtranslate.app` under the `com.beyondtranslate.app`
+  # bundle id and left its data there; zap clears both generations.
   zap trash: [
+    "~/Library/Application Support/com.beyondtranslate.appce",
+    "~/Library/Caches/com.beyondtranslate.appce",
+    "~/Library/HTTPStorages/com.beyondtranslate.appce",
+    "~/Library/Preferences/com.beyondtranslate.appce.plist",
+    "~/Library/Saved Application State/com.beyondtranslate.appce.savedState",
     "~/Library/Application Support/com.beyondtranslate.app",
     "~/Library/Caches/com.beyondtranslate.app",
     "~/Library/HTTPStorages/com.beyondtranslate.app",
